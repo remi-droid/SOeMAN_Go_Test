@@ -1,10 +1,14 @@
 package main
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+const filePath = "files/"
 
 type Document struct {
 	ID         int       `json:"id"`
@@ -16,6 +20,14 @@ type Document struct {
 // The DSN to connect to postgres is: "postgres://upload-service:password@postgres:5432/main".
 
 func main() {
+
+	filepath := filePath + "test.txt"
+	data, err := os.ReadFile(filepath)
+	if err != nil {
+		fmt.Println("File reading error", err)
+		return
+	}
+	fmt.Println(string(data))
 
 	r := gin.Default()
 
