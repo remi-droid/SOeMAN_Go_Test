@@ -5,10 +5,14 @@ services:
       dockerfile: 'Dockerfile'
     depends_on:
       - 'postgres'
+    volumes:
+      - type: bind
+        source: ./files
+        target: /files
+    ports:
+      - "8080:8080"
     # Note that you will need to expose the port your server is running on here.
-    # For reference: https://docs.docker.com/get-started/docker-concepts/running-containers/publishing-ports/#use-docker-compose.
-    # Note that you will need to bind mount the directory where your uploads are stored here.
-    # For reference: https://docs.docker.com/engine/storage/bind-mounts/#use-a-bind-mount-with-compose.
+    # For reference: https://docs.docker.com/get-started/docker-concepts/running-containers/publishing-ports/#use-docker-compose..
 
   postgres:
     image: 'postgres:17.0-alpine'

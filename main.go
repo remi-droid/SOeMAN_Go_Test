@@ -4,22 +4,20 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 const filePath = "files/"
 
 type Document struct {
-	ID         int       `json:"id"`
-	Name       string    `json:"name"`
-	Url        string    `json:"url"`
-	UploadDate time.Time `json:"uploaded_at"`
+	ID         int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name       string    `gorm:"unique;	not null" json:"name"`
+	Url        string    `gorm:"unique; not null" json:"url"`
+	UploadDate time.Time `gorm:"autoUpdateTime" json:"uploaded_at"`
 }
 
-// The DSN to connect to postgres is: "postgres://upload-service:password@postgres:5432/main".
-
 func main() {
+
+	InitDB()
 
 	filepath := filePath + "test.txt"
 	data, err := os.ReadFile(filepath)
@@ -29,11 +27,11 @@ func main() {
 	}
 	fmt.Println(string(data))
 
-	r := gin.Default()
+	// r := gin.Default()
 
-	// Routes
+	// // Routes
 
-	// The servers runs on port 8080
-	r.Run(":8080")
+	// // The servers runs on port 8080
+	// r.Run(":8080")
 
 }
