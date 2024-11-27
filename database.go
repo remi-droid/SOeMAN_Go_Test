@@ -2,10 +2,18 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
+
+type Document struct {
+	ID         int       `gorm:"primaryKey;autoIncrement" json:"id"`
+	Name       string    `gorm:"unique;	not null" json:"name"`
+	Url        string    `gorm:"unique; not null" json:"url"`
+	UploadDate time.Time `gorm:"autoUpdateTime" json:"uploaded_at"`
+}
 
 const Dsn = "postgres://upload-service:password@postgres:5432/main"
 

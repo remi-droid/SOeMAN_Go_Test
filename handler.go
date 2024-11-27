@@ -35,6 +35,7 @@ func UploadDocumentHandler(c *gin.Context) {
 		return
 	}
 
+	// Creation of the entry for this file in the database
 	result := Database.Create(&Document{Name: document.Filename, Url: "http://localhost" + DownloadRoute + document.Filename})
 
 	if result.Error != nil {
@@ -74,7 +75,7 @@ func ListDocumentsHandler(c *gin.Context) {
 	}
 
 	if result.RowsAffected == 0 {
-		c.JSON(http.StatusOK, gin.H{"message": "Database empty, no documents were found."})
+		c.JSON(http.StatusOK, gin.H{"message": "Database empty, no documents to list."})
 	}
 	c.JSON(http.StatusOK, gin.H{"documents": documents})
 }
