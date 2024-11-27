@@ -11,7 +11,7 @@ const Dsn = "postgres://upload-service:password@postgres:5432/main"
 
 var Database *gorm.DB
 
-func InitDB() error {
+func OpenDB() error {
 	var err error
 
 	// Connection to the database
@@ -20,12 +20,15 @@ func InitDB() error {
 		return fmt.Errorf("an error occured during database connection: %w", err)
 	}
 
-	// Migration of all the tables to the database
 	err = Database.AutoMigrate(&Document{})
 	if err != nil {
 		return fmt.Errorf("erreur lors de la migration: %w", err)
 	}
 
-	fmt.Println("Initialisation de la base de données réussie.")
 	return nil
+}
+
+func ClearDatabase() {
+	// Delete all the documents in the database
+	Database.Unscoped().Delete(&Document{})
 }

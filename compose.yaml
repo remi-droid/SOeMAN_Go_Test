@@ -7,8 +7,8 @@ services:
       - 'postgres'
     volumes:
       - type: bind
-        source: ./uploaded_files
-        target: /uploaded_files
+        source: ./uploaded_documents
+        target: /uploaded_documents
     ports:
       - "80:80"
     # Note that you will need to expose the port your server is running on here.
