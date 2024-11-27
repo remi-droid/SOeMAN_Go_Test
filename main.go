@@ -8,11 +8,15 @@ func main() {
 
 	InitDB()
 
-	r := gin.Default()
+	// Initialisation du serveur
+	router := gin.Default()
 
 	// Routes
 
-	// The servers runs on port 8080
-	r.Run(":8080")
+	router.GET("/dl/:filename", DownloadDocumentHandler)
+	router.POST("/ul", UploadDocumentHandler)
+
+	// The servers runs on port 80
+	router.Run(":80")
 
 }

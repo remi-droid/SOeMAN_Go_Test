@@ -9,19 +9,19 @@ import (
 
 const Dsn = "postgres://upload-service:password@postgres:5432/main"
 
-var db *gorm.DB
+var Database *gorm.DB
 
 func InitDB() error {
 	var err error
 
-	// Connexion à la base de données
-	db, err = gorm.Open(postgres.Open(Dsn), &gorm.Config{})
+	// Connection to the database
+	Database, err = gorm.Open(postgres.Open(Dsn), &gorm.Config{})
 	if err != nil {
-		return fmt.Errorf("erreur lors de la connexion à la base de données: %w", err)
+		return fmt.Errorf("an error occured during database connection: %w", err)
 	}
 
-	// Migration des tables vers la base de données
-	err = db.AutoMigrate(&Document{})
+	// Migration of all the tables to the database
+	err = Database.AutoMigrate(&Document{})
 	if err != nil {
 		return fmt.Errorf("erreur lors de la migration: %w", err)
 	}
