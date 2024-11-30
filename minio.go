@@ -40,8 +40,8 @@ func InitMinioStorage() error {
 	return nil
 }
 
-// To upload a file to the minio storage
-func UploadFile(fileName string, fileData []byte) error {
+// To upload a document to the minio storage
+func UploadDocument(fileName string, fileData []byte) error {
 	ctx := context.Background()
 
 	// Create a reader from the file data.
@@ -54,6 +54,37 @@ func UploadFile(fileName string, fileData []byte) error {
 		return err
 	}
 
-	log.Printf("File %s uploaded successfully", fileName)
+	log.Printf("Document %s uploaded successfully", fileName)
 	return nil
+}
+
+// To download a document from the minio storage
+func DownloadDocument(fileName string) (*minio.Object, error) {
+	ctx := context.Background()
+	return minioClient.GetObject(ctx, bucketName, fileName, minio.GetObjectOptions{})
+}
+
+// Remove all the documents from the bucket
+func ClearMinioStorage() (int, error) {
+
+	deletedCount := 0
+	ctx := context.Background()
+
+	// Get the list of all the documents in the bucket
+	documents := minioClient.ListObjects(ctx, bucketName, minio.ListObjectsOptions{
+		Recursive: true,
+	})
+
+	// Delete all the documents one by one
+	for document := range documents {
+		if document.Err != nil {
+			return deletedCount, fmt.Errorf("failed to list document %s: %w", document.Key, document.Err)
+		}
+		if err := minioClient.RemoveObject(ctx, bucketName, document.Key, minio.RemoveObjectOptions{}); err != nil {
+			return deletedCount, fmt.Errorf("failed to delete document %s: %w", document.Key, err)
+		}
+		deletedCount++
+	}
+
+	return deletedCount, nil
 }

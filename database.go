@@ -36,9 +36,9 @@ func OpenDB() error {
 	return nil
 }
 
+// Delete all the documents in the database
 func ClearDatabase() {
-	// Delete all the documents in the database
-	Database.Unscoped().Delete(&Document{})
+	Database.Where("1 = 1").Delete(&Document{})
 }
 
 func DocumentIsPresent(filename string) (bool, error) {

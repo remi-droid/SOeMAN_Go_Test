@@ -1,66 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 )
 
 const uploadedDocumentsPath = "uploaded_documents/"
-
-func UploadDocumentHandler(c *gin.Context) {
-
-	document, err := c.FormFile("document")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No document found in the 'document' field of the request's body."})
-		return
-	}
-
-	documentPath := filepath.Join(uploadedDocumentsPath, document.Filename)
-
-	// If a file with this name already exist we dont upload the new one
-	if _, err := os.Stat(documentPath); err == nil {
-		c.JSON(http.StatusConflict, gin.H{"error": "A document with this name already exists"})
-		return
-	} else if !os.IsNotExist(err) {
-		// Another error during file analysis occured
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error while checking document existence"})
-		return
-	}
-
-	if err := c.SaveUploadedFile(document, documentPath); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save the document"})
-		return
-	}
-
-	if err := InsertInDatabase(document.Filename); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "error during insertion into the database"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{"message": "File uploaded successfully", "file": document.Filename})
-}
-
-func DownloadDocumentHandler(c *gin.Context) {
-
-	filename := c.Param("filename")
-	filePath := filepath.Join(uploadedDocumentsPath, filename)
-
-	// Check if the file exists
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
-		c.JSON(http.StatusNotFound, gin.H{"error": "File '" + filename + "' not found."})
-		return
-	}
-
-	// Headers to automatically download the file
-	c.Header("Content-Type", "application/octet-stream")
-	c.Header("Content-Disposition", "attachment; filename="+filename)
-	c.Header("Content-Transfer-Encoding", "binary")
-	c.File(filePath)
-}
 
 func ListDocumentsHandler(c *gin.Context) {
 	var documents []Document
@@ -78,21 +26,16 @@ func ListDocumentsHandler(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"documents": documents})
 }
 
-/********************************************************************************/
-/*                      	MINIO STORAGE FUNCTIONS								*/
-/********************************************************************************/
-
 func UploadDocumentMinioHandler(c *gin.Context) {
 	file, err := c.FormFile("document")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "No document found in the 'document' field of the request's body."})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No document found in the 'document' field of the request's body"})
 		return
 	}
 
-	// Read the file content
 	src, err := file.Open()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open the document."})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to open the document"})
 		return
 	}
 	defer src.Close()
@@ -103,17 +46,72 @@ func UploadDocumentMinioHandler(c *gin.Context) {
 		return
 	}
 
+	fileIsPresent, err := DocumentIsPresent(file.Filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "a problem occured during database request"})
+		return
+	}
+
+	if fileIsPresent {
+		c.JSON(http.StatusInternalServerError, gin.H{"message": "A document named with this name was uploaded previously, please use another name"})
+		return
+	}
+
 	if err := InsertInDatabase(file.Filename); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "error during insertion into the database"})
 		return
 	}
 
-	// Upload to MinIO
-	err = UploadFile(file.Filename, fileData)
+	err = UploadDocument(file.Filename, fileData)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload document to storage"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Document " + file.Filename + "uploaded successfully", "file_name": file.Filename})
+	c.JSON(http.StatusOK, gin.H{"message": "Document " + file.Filename + " uploaded successfully", "file_name": file.Filename})
+}
+
+func DownloadDocumentMinioHandler(c *gin.Context) {
+
+	filename := c.Param("filename")
+
+	fileIsPresent, err := DocumentIsPresent(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "a problem occured during database request"})
+		return
+	}
+	if !fileIsPresent {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "file " + filename + " is not present in the database"})
+		return
+	}
+
+	document, err := DownloadDocument(filename)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to retrieve file from MinIO", "details": err.Error()})
+		return
+	}
+	defer document.Close()
+
+	// Configure headers of the response to download the document
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.Header("Content-Type", "application/octet-stream")
+
+	// Put the file in the response
+	if _, err := io.Copy(c.Writer, document); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to stream document", "details": err.Error()})
+		return
+	}
+}
+
+func ClearDataHandler(c *gin.Context) {
+
+	ClearDatabase()
+	deletedCount, err := ClearMinioStorage()
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear the minio storage :", "details": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Database and bucket cleared successfully! " + string(deletedCount) + " documents deleted."})
 }

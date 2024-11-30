@@ -25,8 +25,9 @@ func main() {
 
 	// Endpoints
 	router.GET("/list", ListDocumentsHandler)
-	router.GET(DownloadRoute+":filename", DownloadDocumentHandler)
+	router.GET(DownloadRoute+":filename", DownloadDocumentMinioHandler)
 	router.POST("/ul", UploadDocumentMinioHandler)
+	router.DELETE("/clear", ClearDataHandler)
 
 	// The servers runs on port 80
 	router.Run(":80")
