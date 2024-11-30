@@ -40,3 +40,23 @@ func ClearDatabase() {
 	// Delete all the documents in the database
 	Database.Unscoped().Delete(&Document{})
 }
+
+func DocumentIsPresent(filename string) (bool, error) {
+
+	result := Database.First(&Document{}, "name = ?", filename)
+
+	if result.Error != nil {
+		if result.Error == gorm.ErrRecordNotFound {
+			return false, nil
+		}
+		return false, result.Error
+	}
+
+	return true, nil
+
+}
+
+func InsertInDatabase(filename string) error {
+	result := Database.Create(&Document{Name: filename, Url: "http://localhost" + DownloadRoute + filename})
+	return result.Error
+}

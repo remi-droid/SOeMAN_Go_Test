@@ -2,6 +2,8 @@ package main
 
 import (
 	"log"
+
+	"github.com/gin-gonic/gin"
 )
 
 const DownloadRoute = "/dl/"
@@ -13,14 +15,19 @@ func main() {
 		log.Fatal("Program exit : An error occured during database initialization -> ", err)
 	}
 
-	// // Server initialization
-	// router := gin.Default()
+	err = InitMinioStorage()
+	if err != nil {
+		log.Fatal("Program exit : An error occured during minio storage initialization -> ", err)
+	}
 
-	// // Endpoints
-	// router.GET("/list", ListDocumentsHandler)
-	// router.GET(DownloadRoute+":filename", DownloadDocumentHandler)
-	// router.POST("/ul", UploadDocumentHandler)
+	// Server initialization
+	router := gin.Default()
 
-	// // The servers runs on port 80
-	// router.Run(":80")
+	// Endpoints
+	router.GET("/list", ListDocumentsHandler)
+	router.GET(DownloadRoute+":filename", DownloadDocumentHandler)
+	router.POST("/ul", UploadDocumentMinioHandler)
+
+	// The servers runs on port 80
+	router.Run(":80")
 }
