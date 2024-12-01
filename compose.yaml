@@ -4,15 +4,16 @@ services:
       context: '.'
       dockerfile: 'Dockerfile'
     depends_on:
-      - 'postgres'
+      minio:
+        condition: service_healthy
+      postgres:
+        condition: service_started
     volumes:
       - type: bind
         source: ./uploaded_documents
         target: /uploaded_documents
     ports:
       - "80:80"
-    # Note that you will need to expose the port your server is running on here.
-    # For reference: https://docs.docker.com/get-started/docker-concepts/running-containers/publishing-ports/#use-docker-compose..
 
   postgres:
     image: 'postgres:17.0-alpine'
@@ -37,6 +38,11 @@ services:
       - '9090:9090'
     volumes:
       - 'minio-data:/mnt/data'
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pg-data: {}

@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-const uploadedDocumentsPath = "uploaded_documents/"
-
 func ListDocumentsHandler(c *gin.Context) {
 	var documents []Document
 
