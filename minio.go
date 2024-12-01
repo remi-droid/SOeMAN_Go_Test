@@ -29,6 +29,8 @@ func InitMinioStorage() error {
 	if errBucketExists != nil {
 		return fmt.Errorf("failed to check bucket: %w", errBucketExists)
 	}
+
+	// If the bucket doesnt exist we create a new one with the right name
 	if !exists {
 		err = minioClient.MakeBucket(ctx, bucketName, minio.MakeBucketOptions{})
 		if err != nil {
@@ -47,6 +49,7 @@ func UploadDocument(fileName string, fileData []byte) error {
 	// Create a reader from the file data.
 	fileReader := bytes.NewReader(fileData)
 
+	// We put the document into the bucket of the minio storage
 	_, err := minioClient.PutObject(ctx, bucketName, fileName, fileReader, int64(len(fileData)), minio.PutObjectOptions{
 		ContentType: "application/octet-stream",
 	})
@@ -54,14 +57,12 @@ func UploadDocument(fileName string, fileData []byte) error {
 		return err
 	}
 
-	log.Printf("Document %s uploaded successfully", fileName)
 	return nil
 }
 
 // To download a document from the minio storage
 func DownloadDocument(fileName string) (*minio.Object, error) {
-	ctx := context.Background()
-	return minioClient.GetObject(ctx, bucketName, fileName, minio.GetObjectOptions{})
+	return minioClient.GetObject(context.Background(), bucketName, fileName, minio.GetObjectOptions{})
 }
 
 // Remove all the documents from the bucket

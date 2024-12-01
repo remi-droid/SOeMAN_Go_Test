@@ -6,15 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// DownloadRoute represents the endpoint to call to download a file
 const DownloadRoute = "/dl/"
 
 func main() {
 
+	// Connection to the postgre database
 	err := OpenDB()
 	if err != nil {
 		log.Fatal("Program exit : An error occured during database initialization -> ", err)
 	}
 
+	// Connection to the minio storage
 	err = InitMinioStorage()
 	if err != nil {
 		log.Fatal("Program exit : An error occured during minio storage initialization -> ", err)
