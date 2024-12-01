@@ -13,6 +13,7 @@ import (
 var minioClient *minio.Client
 var bucketName = "uploads"
 
+// InitMinioStorage initializes the connection to the minio storage and checks if the bucket 'uploads' needs to be created
 func InitMinioStorage() error {
 	var err error
 	minioClient, err = minio.New("minio:9000", &minio.Options{
@@ -42,7 +43,7 @@ func InitMinioStorage() error {
 	return nil
 }
 
-// To upload a document to the minio storage
+// UploadDocument upload a document with its filename and content to the minio storage
 func UploadDocument(fileName string, fileData []byte) error {
 	ctx := context.Background()
 
@@ -60,12 +61,12 @@ func UploadDocument(fileName string, fileData []byte) error {
 	return nil
 }
 
-// To download a document from the minio storage
+// DownloadDocument returns a document identified by its name in the minio storage
 func DownloadDocument(fileName string) (*minio.Object, error) {
 	return minioClient.GetObject(context.Background(), bucketName, fileName, minio.GetObjectOptions{})
 }
 
-// Remove all the documents from the bucket
+// ClearMinioStorage removes all the documents from the bucket used by the program
 func ClearMinioStorage() (int, error) {
 
 	deletedCount := 0
